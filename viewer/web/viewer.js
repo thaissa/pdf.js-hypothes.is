@@ -2408,7 +2408,7 @@ var PDFViewerApplication = {
   },
   requestSendBookmarksAjax: function requestSendBookmarksAjax(data) {
     data.page_id = '19565';
-    data.user_id = '30';
+    data.user_id = localStorage.getItem('wordpress_user_id');
 
     if (navigator.onLine) {
       const xhttpr = new XMLHttpRequest();
@@ -22256,7 +22256,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
         var data = {
           'action': 'get_bookmarks',
           'page_id': '19565',
-          'user_id': 30,
+          'user_id': localStorage.getItem('wordpress_user_id'),
         };
         const xhttpr = new XMLHttpRequest();
         const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
