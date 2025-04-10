@@ -401,6 +401,8 @@ var _toolbar = __webpack_require__(40);
 
 var _view_history = __webpack_require__(41);
 
+var _pdf_bookmarks_viewer = __webpack_require__(50);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
 function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); enumerableOnly && (symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; })), keys.push.apply(keys, symbols); } return keys; }
@@ -536,6 +538,7 @@ var PDFViewerApplication = {
   pdfOutlineViewer: null,
   pdfAttachmentViewer: null,
   pdfLayerViewer: null,
+  pdfBookmarksViewer: null,
   pdfCursorTools: null,
   pdfScriptingManager: null,
   store: null,
@@ -961,6 +964,10 @@ var PDFViewerApplication = {
                 eventBus: eventBus,
                 l10n: _this5.l10n
               });
+              _this5.pdfBookmarksViewer = new _pdf_bookmarks_viewer.PDFBookmarksViewer({
+                container: appConfig.sidebar.bookmarksView,
+                eventBus: eventBus
+              });
               _this5.pdfSidebar = new _pdf_sidebar.PDFSidebar({
                 elements: appConfig.sidebar,
                 pdfViewer: _this5.pdfViewer,
@@ -1087,12 +1094,12 @@ var PDFViewerApplication = {
     return this._contentDispositionFilename || (0, _pdfjsLib.getPdfFilenameFromUrl)(this.url);
   },
 
-  _hideViewBookmark: function _hideViewBookmark() {
+  _hideAddBookmarks: function _hideAddBookmarks() {
     var _this$appConfig = this.appConfig,
         toolbar = _this$appConfig.toolbar,
         secondaryToolbar = _this$appConfig.secondaryToolbar;
-    toolbar.viewBookmark.hidden = true;
-    secondaryToolbar.viewBookmarkButton.hidden = true;
+    toolbar.addBookmarks.hidden = true;
+    secondaryToolbar.addToBookmarksButton.hidden = true;
   },
   _cancelIdleCallbacks: function _cancelIdleCallbacks() {
     if (!this._idleCallbacks.size) {
@@ -1128,7 +1135,7 @@ var PDFViewerApplication = {
             case 0:
               _this6._unblockDocumentLoadEvent();
 
-              _this6._hideViewBookmark();
+              _this6._hideAddBookmarks();
 
               container = _this6.appConfig.errorWrapper.container;
               container.hidden = true;
@@ -2399,6 +2406,90 @@ var PDFViewerApplication = {
 
     (_this$pdfPresentation = this.pdfPresentationMode) === null || _this$pdfPresentation === void 0 ? void 0 : _this$pdfPresentation.request();
   },
+  requestSendBookmarksAjax: function requestSendBookmarksAjax(data) {
+    data.page_id = '19565';
+    data.user_id = '30';
+
+    if (navigator.onLine) {
+      const xhttpr = new XMLHttpRequest();
+      const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
+      xhttpr.open('POST', url, true);
+      xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+      xhttpr.send(new URLSearchParams(data).toString());
+
+      xhttpr.onload = ()=> {
+        if (xhttpr.status === 200) {
+          const bookmarks = JSON.parse(xhttpr.response);
+
+          // Save bookmarks offline
+          offlineBookmarks.save(bookmarks);
+
+          PDFViewerApplication.pdfBookmarksViewer.render({
+            bookmarks: bookmarks
+          });
+        }
+      };
+    }
+  },
+  requestAddToBookmarks: function requestAddToBookmarks() {
+    var data = {
+      'action' : 'add_bookmark',
+      'link'   : PDFViewerApplication.appConfig.toolbar.addToBookmarks.href,
+    };
+    this.requestSendBookmarksAjax(data);
+
+    if (!navigator.onLine) {
+      // Generate page title
+      var page_number = data.link.match(/page=([0-9]+)/);
+      page_number = 'Page ' + page_number[1];
+
+      // Add bookmark to offline bookmarks
+      offlineBookmarks.add(data.link, page_number)
+
+      // Render bookmarks
+      var bookmarks = offlineBookmarks.get()
+      PDFViewerApplication.pdfBookmarksViewer.render({
+        bookmarks: bookmarks
+      });
+    }
+  },
+  requestRemoveFromBookmarks: function requestRemoveFromBookmarks(position) {
+    var data = {
+      'action'  : 'remove_bookmark',
+      'position': position,
+    };
+    this.requestSendBookmarksAjax(data);
+
+    if (!navigator.onLine) {
+      // Rename bookmark on offline bookmarks
+      offlineBookmarks.remove(data.position);
+
+      // Render bookmarks
+      var bookmarks = offlineBookmarks.get()
+      PDFViewerApplication.pdfBookmarksViewer.render({
+        bookmarks: bookmarks
+      });
+    }
+  },
+  requestRenameBookmark: function requestRenameBookmark(position, new_name) {
+    var data = {
+      'action'  : 'rename_bookmark',
+      'position': position,
+      'new_name': new_name,
+    };
+    this.requestSendBookmarksAjax(data);
+
+    if (!navigator.onLine) {
+      // Rename bookmark on offline bookmarks
+      offlineBookmarks.rename(data.position, data.new_name);
+
+      // Render bookmarks
+      var bookmarks = offlineBookmarks.get()
+      PDFViewerApplication.pdfBookmarksViewer.render({
+        bookmarks: bookmarks
+      });
+    }
+  },
   triggerPrinting: function triggerPrinting() {
     if (!this.supportsPrinting) {
       return;
@@ -2439,6 +2530,8 @@ var PDFViewerApplication = {
     eventBus._on("presentationmodechanged", webViewerPresentationModeChanged);
 
     eventBus._on("presentationmode", webViewerPresentationMode);
+
+    eventBus._on("addtobookmarks", webViewerAddToBookmarks);
 
     eventBus._on("print", webViewerPrint);
 
@@ -2580,6 +2673,8 @@ var PDFViewerApplication = {
     eventBus._off("presentationmodechanged", webViewerPresentationModeChanged);
 
     eventBus._off("presentationmode", webViewerPresentationMode);
+
+    eventBus._off("addtobookmarks", webViewerAddToBookmarks);
 
     eventBus._off("print", webViewerPrint);
 
@@ -2901,7 +2996,7 @@ function webViewerOpenFileViaURL(file) {
   if (file) {
     PDFViewerApplication.open(file);
   } else {
-    PDFViewerApplication._hideViewBookmark();
+    PDFViewerApplication._hideAddBookmarks();
   }
 }
 
@@ -2941,6 +3036,9 @@ function webViewerPageMode(_ref12) {
       break;
 
     case "bookmarks":
+      view = _ui_utils.SidebarView.BOOKMARKS;
+      break;
+
     case "outline":
       view = _ui_utils.SidebarView.OUTLINE;
       break;
@@ -3018,8 +3116,8 @@ function webViewerUpdateViewarea(evt) {
   }
 
   var href = PDFViewerApplication.pdfLinkService.getAnchorUrl(location.pdfOpenParams);
-  PDFViewerApplication.appConfig.toolbar.viewBookmark.href = href;
-  PDFViewerApplication.appConfig.secondaryToolbar.viewBookmarkButton.href = href;
+  PDFViewerApplication.appConfig.toolbar.addToBookmarks.href = href;
+  PDFViewerApplication.appConfig.secondaryToolbar.addToBookmarksButton.href = href;
   var currentPage = PDFViewerApplication.pdfViewer.getPageView(PDFViewerApplication.page - 1);
   var loading = (currentPage === null || currentPage === void 0 ? void 0 : currentPage.renderingState) !== _ui_utils.RenderingStates.FINISHED;
   PDFViewerApplication.toolbar.updateLoadingIndicatorState(loading);
@@ -3104,6 +3202,10 @@ var webViewerFileInputChange, webViewerOpenFile;
 
 function webViewerPresentationMode() {
   PDFViewerApplication.requestPresentationMode();
+}
+
+function webViewerAddToBookmarks() {
+  PDFViewerApplication.requestAddToBookmarks();
 }
 
 function webViewerPrint() {
@@ -4351,7 +4453,8 @@ var SidebarView = {
   THUMBS: 1,
   OUTLINE: 2,
   ATTACHMENTS: 3,
-  LAYERS: 4
+  LAYERS: 4,
+  BOOKMARKS: 5,
 };
 exports.SidebarView = SidebarView;
 var RendererType = {
@@ -12978,10 +13081,12 @@ var PDFSidebar = /*#__PURE__*/function () {
     this.outlineButton = elements.outlineButton;
     this.attachmentsButton = elements.attachmentsButton;
     this.layersButton = elements.layersButton;
+    this.bookmarksButton = elements.bookmarksButton;
     this.thumbnailView = elements.thumbnailView;
     this.outlineView = elements.outlineView;
     this.attachmentsView = elements.attachmentsView;
     this.layersView = elements.layersView;
+    this.bookmarksView = elements.bookmarksView;
     this._outlineOptionsContainer = elements.outlineOptionsContainer;
     this._currentOutlineItemButton = elements.currentOutlineItemButton;
     this.eventBus = eventBus;
@@ -13100,6 +13205,13 @@ var PDFSidebar = /*#__PURE__*/function () {
 
           break;
 
+        case _ui_utils.SidebarView.BOOKMARKS:
+          if (this.bookmarksButton.disabled) {
+            return false;
+          }
+
+          break;
+
         default:
           console.error("PDFSidebar._switchView: \"".concat(view, "\" is not a valid view."));
           return false;
@@ -13109,19 +13221,23 @@ var PDFSidebar = /*#__PURE__*/function () {
       var isThumbs = view === _ui_utils.SidebarView.THUMBS,
           isOutline = view === _ui_utils.SidebarView.OUTLINE,
           isAttachments = view === _ui_utils.SidebarView.ATTACHMENTS,
-          isLayers = view === _ui_utils.SidebarView.LAYERS;
+          isLayers = view === _ui_utils.SidebarView.LAYERS,
+          isBookmarks = view === _ui_utils.SidebarView.BOOKMARKS;
       this.thumbnailButton.classList.toggle("toggled", isThumbs);
       this.outlineButton.classList.toggle("toggled", isOutline);
       this.attachmentsButton.classList.toggle("toggled", isAttachments);
       this.layersButton.classList.toggle("toggled", isLayers);
+      this.bookmarksButton.classList.toggle("toggled", isBookmarks);
       this.thumbnailButton.setAttribute("aria-checked", isThumbs);
       this.outlineButton.setAttribute("aria-checked", isOutline);
       this.attachmentsButton.setAttribute("aria-checked", isAttachments);
       this.layersButton.setAttribute("aria-checked", isLayers);
+      this.bookmarksButton.setAttribute("aria-checked", isBookmarks);
       this.thumbnailView.classList.toggle("hidden", !isThumbs);
       this.outlineView.classList.toggle("hidden", !isOutline);
       this.attachmentsView.classList.toggle("hidden", !isAttachments);
       this.layersView.classList.toggle("hidden", !isLayers);
+      this.bookmarksView.classList.toggle("hidden", !isBookmarks);
 
       this._outlineOptionsContainer.classList.toggle("hidden", !isOutline);
 
@@ -13290,6 +13406,9 @@ var PDFSidebar = /*#__PURE__*/function () {
         _this3.eventBus.dispatch("resetlayers", {
           source: _this3
         });
+      });
+      this.bookmarksButton.addEventListener("click", function () {
+        _this3.switchView(_ui_utils.SidebarView.BOOKMARKS);
       });
 
       this._currentOutlineItemButton.addEventListener("click", function () {
@@ -18939,8 +19058,8 @@ var SecondaryToolbar = /*#__PURE__*/function () {
       eventName: "download",
       close: true
     }, {
-      element: options.viewBookmarkButton,
-      eventName: null,
+      element: options.addToBookmarksButton,
+      eventName: "addtobookmarks",
       close: true
     }, {
       element: options.firstPageButton,
@@ -19349,8 +19468,8 @@ var Toolbar = /*#__PURE__*/function () {
       element: options.download,
       eventName: "download"
     }, {
-      element: options.viewBookmark,
-      eventName: null
+      element: options.addToBookmarks,
+      eventName: "addtobookmarks"
     }];
     this.items = {
       numPages: options.numPages,
@@ -22087,7 +22206,217 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
   }
 }
 
-/***/ })
+/***/ }),
+
+/* 50 */
+/***/ (function(module, exports, __webpack_require__) {
+
+  "use strict";
+
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.PDFBookmarksViewer = void 0;
+
+  var _ui_utils = __webpack_require__(50);
+
+  function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+  function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+  function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+  var PDFBookmarksViewer = /*#__PURE__*/function () {
+    function PDFBookmarksViewer(_ref) {
+      var _this = this;
+      var eventBus = _ref.eventBus;
+
+      this.container = _ref.container;
+      eventBus._on("documentinit", this._dispatchEvent);
+
+      _classCallCheck(this, PDFBookmarksViewer);
+    }
+
+    _createClass(PDFBookmarksViewer, [{
+      key: "reset",
+      value: function reset() {
+        this.container.textContent = "";
+      }
+    }, {
+      key: "_bindRemove",
+      value: function _bindRemove(link, position) {
+        link.onclick = function() {
+          PDFViewerApplication.requestRemoveFromBookmarks(position);
+          return false;
+        };
+      }
+    }, {
+      key: '_dispatchEvent',
+      value: function _dispatchEvent() {
+        var data = {
+          'action': 'get_bookmarks',
+          'page_id': '19565',
+          'user_id': 30,
+        };
+        const xhttpr = new XMLHttpRequest();
+        const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
+        xhttpr.open('POST', url, true);
+        xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xhttpr.send(new URLSearchParams(data).toString());
+
+        xhttpr.onload = ()=> {
+          if (xhttpr.status === 200) {
+            const bookmarks = JSON.parse(xhttpr.response);
+            console.log('bookmarks')
+            console.log(bookmarks)
+
+            PDFViewerApplication.pdfBookmarksViewer.render({
+              bookmarks: bookmarks
+            });
+
+            // Save bookmarks for offline use if needed
+            localStorage.setItem('bookmarks-19565', JSON.stringify(bookmarks));
+          }
+        };
+      }
+    }, {
+      key: "_doCancel",
+      value: function _doCancel(li) {
+        // Reset li class
+        li.className = 'bookmarkItem';
+        // Remove edit div
+        li.getElementsByClassName('bookmarkEdit')[0].remove();
+      }
+    }, {
+      key: "_bindRename",
+      value: function _bindRename(link, li, position) {
+        link.onclick = function() {
+          // Cancel all editing
+          var elements = document.getElementsByClassName('bookmarkEditing');
+
+          for (var i = 0; i < elements.length; i++) {
+            this._doCancel(elements[i]);
+          }
+
+          // Get bookmark name
+          var name = li.getElementsByClassName('bookmarkName')[0].textContent;
+
+          var edit = document.createElement("div");
+          edit.className = "bookmarkEdit";
+
+          var input = document.createElement("input");
+          input.className = "bookmarkNewName";
+          input.setAttribute('type', 'text');
+          input.value = name;
+
+          input.onkeypress = function(event) {
+            if (event.keyCode === 13) { // 13 => ENTER
+              input.nextSibling.getElementsByClassName('bookmarkSave')[0].click(); // Save
+            }
+          }
+
+          var actions = document.createElement("div");
+          actions.className = "bookmarkActions";
+
+          var save = document.createElement("a");
+          save.className = "bookmarkSave";
+          save.textContent = "save";
+
+          save.onclick = function() {
+            var name = li.getElementsByClassName('bookmarkNewName')[0].value;
+            PDFViewerApplication.requestRenameBookmark(position, name);
+          }
+
+          var cancel = document.createElement("a");
+          cancel.className = "bookmarkCancel";
+          cancel.textContent = "cancel";
+
+          cancel.onclick = function() {
+            // Reset li class
+            li.className = 'bookmarkItem';
+            // Remove edit div
+            li.getElementsByClassName('bookmarkEdit')[0].remove();
+          }
+
+          actions.appendChild(save);
+          actions.appendChild(cancel);
+
+          edit.appendChild(input);
+          edit.appendChild(actions);
+
+          // Remove everything from parent node
+          li.className += " bookmarkEditing";
+          li.appendChild(edit);
+
+          input.focus();
+        };
+      }
+    }, {
+      key: "render",
+      value: function render(_ref) {
+        var bookmarksCount = 0;
+        this.reset();
+
+        if (!_ref.bookmarks) {
+          this._dispatchEvent();
+          return;
+        }
+
+        bookmarksCount = Object.keys(_ref.bookmarks).length;
+
+        var div = document.createElement("div");
+        div.className = "bookmarkItems";
+
+        var ul = document.createElement("ul");
+
+        for (var i = 0; i < bookmarksCount; i++) {
+          var li = document.createElement("li");
+          li.className = "bookmarkItem";
+
+          var show = document.createElement("div");
+          show.className = "bookmarkShow";
+
+          var link = document.createElement("a");
+          link.className = "bookmarkName";
+          link.textContent = _ref.bookmarks[i].title;
+          link.setAttribute('href', _ref.bookmarks[i].link);
+
+          var actions = document.createElement("div");
+          actions.className = "bookmarkActions";
+
+          var rename = document.createElement("a");
+          rename.className = "bookmarkRename";
+          rename.textContent = "rename";
+          this._bindRename(rename, li, i);
+
+          var remove = document.createElement("a");
+          remove.className = "bookmarkRemove";
+          remove.textContent = "remove";
+          this._bindRemove(remove, i);
+
+          actions.appendChild(rename);
+          actions.appendChild(remove);
+
+          show.appendChild(link);
+          show.appendChild(actions);
+
+          li.appendChild(show);
+
+          ul.appendChild(li);
+        }
+
+        div.appendChild(ul);
+        this.container.appendChild(div);
+      }
+    }]);
+
+    return PDFBookmarksViewer;
+  }();
+
+  exports.PDFBookmarksViewer = PDFBookmarksViewer;
+
+})
+
 /******/ 	]);
 /************************************************************************/
 /******/ 	// The module cache
@@ -22197,7 +22526,7 @@ function getViewerConfiguration() {
       print: document.getElementById("print"),
       presentationModeButton: document.getElementById("presentationMode"),
       download: document.getElementById("download"),
-      viewBookmark: document.getElementById("viewBookmark")
+      addToBookmarks: document.getElementById("addToBookmarks")
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
@@ -22207,7 +22536,7 @@ function getViewerConfiguration() {
       openFileButton: document.getElementById("secondaryOpenFile"),
       printButton: document.getElementById("secondaryPrint"),
       downloadButton: document.getElementById("secondaryDownload"),
-      viewBookmarkButton: document.getElementById("secondaryViewBookmark"),
+      addToBookmarksButton: document.getElementById("secondaryAddToBookmarks"),
       firstPageButton: document.getElementById("firstPage"),
       lastPageButton: document.getElementById("lastPage"),
       pageRotateCwButton: document.getElementById("pageRotateCw"),
@@ -22231,10 +22560,12 @@ function getViewerConfiguration() {
       outlineButton: document.getElementById("viewOutline"),
       attachmentsButton: document.getElementById("viewAttachments"),
       layersButton: document.getElementById("viewLayers"),
+      bookmarksButton: document.getElementById("viewBookmarks"),
       thumbnailView: document.getElementById("thumbnailView"),
       outlineView: document.getElementById("outlineView"),
       attachmentsView: document.getElementById("attachmentsView"),
       layersView: document.getElementById("layersView"),
+      bookmarksView: document.getElementById("bookmarksView"),
       outlineOptionsContainer: document.getElementById("outlineOptionsContainer"),
       currentOutlineItemButton: document.getElementById("currentOutlineItem")
     },
@@ -22320,3 +22651,59 @@ if (document.readyState === "interactive" || document.readyState === "complete")
 /******/ })()
 ;
 //# sourceMappingURL=viewer.js.map
+
+// Deal with offline content
+var offlineBookmarks = function() {
+  this.add = function (link, title) {
+    var bookmarks = this.get();
+    bookmarks.push({
+      link: link,
+      title: title
+    });
+    this.save(bookmarks);
+  }
+  this.rename = function(position, new_name) {
+    var bookmarks = this.get();
+    bookmarks[position].title = new_name;
+    this.save(bookmarks);
+  }
+  this.remove = function(position) {
+    var bookmarks = this.get();
+    bookmarks.splice(position, 1);
+    this.save(bookmarks);
+  }
+  this.get = function() {
+    var bookmarks = JSON.parse(localStorage.getItem('bookmarks-19565'));
+
+    return bookmarks;
+  }
+  this.save = function(bookmarks) {
+    localStorage.setItem('bookmarks-19565', JSON.stringify(bookmarks));
+  }
+}
+offlineBookmarks = new offlineBookmarks();
+
+window.addEventListener('online', function() {
+  // Send all bookmarks
+  var data = {
+    'action'   : 'save_all_bookmarks',
+    'bookmarks': offlineBookmarks.get(),
+    'page_id'  : '19565',
+  }
+
+  const xhttpr = new XMLHttpRequest();
+  const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
+  xhttpr.open('POST', url, true);
+  xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+  xhttpr.send(new URLSearchParams(data).toString());
+
+  xhttpr.onload = ()=> {
+    if (xhttpr.status === 200) {
+      const bookmarks = JSON.parse(xhttpr.response);
+
+      PDFViewerApplication.pdfBookmarksViewer.render({
+        bookmarks: bookmarks
+      });
+    }
+  };
+});

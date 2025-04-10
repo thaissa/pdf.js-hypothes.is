@@ -2082,6 +2082,11 @@ select {
           mask-image: var(--toolbarButton-viewLayers-icon);
 }
 
+#viewBookmarks.toolbarButton::before {
+  -webkit-mask-image: var(--toolbarButton-bookmark-icon);
+  mask-image: var(--toolbarButton-bookmark-icon);
+}
+
 #currentOutlineItem.toolbarButton::before {
   -webkit-mask-image: var(--toolbarButton-currentOutlineItem-icon);
           mask-image: var(--toolbarButton-currentOutlineItem-icon);
@@ -2788,6 +2793,49 @@ dialog :link {
 
 #printContainer {
   display: none;
+}
+
+.bookmarkItem a {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+}
+
+.bookmarkItem .bookmarkName {
+    margin: 4px 0 5px;
+    display: block;
+}
+
+.bookmarkItem.bookmarkEditing .bookmarkShow {
+	display: none;
+}
+
+.bookmarkItem {
+	position: relative;
+	padding-bottom: 15px;
+}
+.bookmarkItem input {
+    width: 90%;
+    font-size: 13px;
+    padding: 3px;
+}
+.bookmarkItem .bookmarkActions {
+	display: none;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+}
+.bookmarkItem:hover .bookmarkActions {
+	display: block;
+}
+.bookmarkItem .bookmarkActions a {
+	display: inline;
+	min-width: auto;
+	cursor: pointer;
+}
+.bookmarkItem .bookmarkActions a:first-child:after {
+	content: "|";
+	padding-left: 2px;
+	margin-right: 2px;
 }
 
 @media print {
