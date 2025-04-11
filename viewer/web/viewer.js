@@ -2412,7 +2412,7 @@ var PDFViewerApplication = {
 
     if (navigator.onLine) {
       const xhttpr = new XMLHttpRequest();
-      const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
+      const url = 'https://bastreamingstg.wpengine.com/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
       xhttpr.open('POST', url, true);
       xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
       xhttpr.send(new URLSearchParams(data).toString());
@@ -22259,7 +22259,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
           'user_id': localStorage.getItem('wordpress_user_id'),
         };
         const xhttpr = new XMLHttpRequest();
-        const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
+        const url = 'https://bastreamingstg.wpengine.com/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
         xhttpr.open('POST', url, true);
         xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
         xhttpr.send(new URLSearchParams(data).toString());
@@ -22692,7 +22692,7 @@ window.addEventListener('online', function() {
   }
 
   const xhttpr = new XMLHttpRequest();
-  const url = 'https://npcourses-live.local/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
+  const url = 'https://bastreamingstg.wpengine.com/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
   xhttpr.open('POST', url, true);
   xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
   xhttpr.send(new URLSearchParams(data).toString());
