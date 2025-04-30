@@ -2407,7 +2407,7 @@ var PDFViewerApplication = {
     (_this$pdfPresentation = this.pdfPresentationMode) === null || _this$pdfPresentation === void 0 ? void 0 : _this$pdfPresentation.request();
   },
   requestSendBookmarksAjax: function requestSendBookmarksAjax(data) {
-    data.page_id = '19565';
+    data.page_id = localStorage.getItem('wordpress_ebook_id');
     data.user_id = localStorage.getItem('wordpress_user_id');
 
     if (navigator.onLine) {
@@ -22255,7 +22255,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
       value: function _dispatchEvent() {
         var data = {
           'action': 'get_bookmarks',
-          'page_id': '19565',
+          'page_id': localStorage.getItem('wordpress_ebook_id'),
           'user_id': localStorage.getItem('wordpress_user_id'),
         };
         const xhttpr = new XMLHttpRequest();
@@ -22275,7 +22275,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
             });
 
             // Save bookmarks for offline use if needed
-            localStorage.setItem('bookmarks-19565', JSON.stringify(bookmarks));
+            localStorage.setItem('bookmarks-' + localStorage.getItem('wordpress_ebook_id'), JSON.stringify(bookmarks));
           }
         };
       }
@@ -22673,12 +22673,10 @@ var offlineBookmarks = function() {
     this.save(bookmarks);
   }
   this.get = function() {
-    var bookmarks = JSON.parse(localStorage.getItem('bookmarks-19565'));
-
-    return bookmarks;
+    return JSON.parse(localStorage.getItem('bookmarks-' + localStorage.getItem('wordpress_ebook_id')));
   }
   this.save = function(bookmarks) {
-    localStorage.setItem('bookmarks-19565', JSON.stringify(bookmarks));
+    localStorage.setItem('bookmarks-' + localStorage.getItem('wordpress_ebook_id'), JSON.stringify(bookmarks));
   }
 }
 offlineBookmarks = new offlineBookmarks();
@@ -22688,7 +22686,7 @@ window.addEventListener('online', function() {
   var data = {
     'action'   : 'save_all_bookmarks',
     'bookmarks': offlineBookmarks.get(),
-    'page_id'  : '19565',
+    'page_id'  : localStorage.getItem('wordpress_ebook_id'),
   }
 
   const xhttpr = new XMLHttpRequest();
