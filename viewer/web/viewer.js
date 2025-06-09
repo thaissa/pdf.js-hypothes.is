@@ -2533,12 +2533,6 @@ var PDFViewerApplication = {
 
     eventBus._on("addtobookmarks", webViewerAddToBookmarks);
 
-    eventBus._on("print", webViewerPrint);
-
-    eventBus._on("download", webViewerDownload);
-
-    eventBus._on("save", webViewerSave);
-
     eventBus._on("firstpage", webViewerFirstPage);
 
     eventBus._on("lastpage", webViewerLastPage);
@@ -2675,12 +2669,6 @@ var PDFViewerApplication = {
     eventBus._off("presentationmode", webViewerPresentationMode);
 
     eventBus._off("addtobookmarks", webViewerAddToBookmarks);
-
-    eventBus._off("print", webViewerPrint);
-
-    eventBus._off("download", webViewerDownload);
-
-    eventBus._off("save", webViewerSave);
 
     eventBus._off("firstpage", webViewerFirstPage);
 
@@ -3536,26 +3524,6 @@ function webViewerKeyDown(evt) {
           ensureViewerFocused = true;
         }
 
-        break;
-    }
-  }
-
-  if (cmd === 1 || cmd === 8) {
-    switch (evt.keyCode) {
-      case 83:
-        eventBus.dispatch("download", {
-          source: window
-        });
-        handled = true;
-        break;
-
-      case 79:
-        {
-          eventBus.dispatch("openfile", {
-            source: window
-          });
-          handled = true;
-        }
         break;
     }
   }
@@ -19042,22 +19010,6 @@ var SecondaryToolbar = /*#__PURE__*/function () {
     this.toggleButton = options.toggleButton;
     this.toolbarButtonContainer = options.toolbarButtonContainer;
     this.buttons = [{
-      element: options.presentationModeButton,
-      eventName: "presentationmode",
-      close: true
-    }, {
-      element: options.openFileButton,
-      eventName: "openfile",
-      close: true
-    }, {
-      element: options.printButton,
-      eventName: "print",
-      close: true
-    }, {
-      element: options.downloadButton,
-      eventName: "download",
-      close: true
-    }, {
       element: options.addToBookmarksButton,
       eventName: "addtobookmarks",
       close: true
@@ -19455,18 +19407,6 @@ var Toolbar = /*#__PURE__*/function () {
     }, {
       element: options.zoomOut,
       eventName: "zoomout"
-    }, {
-      element: options.openFile,
-      eventName: "openfile"
-    }, {
-      element: options.print,
-      eventName: "print"
-    }, {
-      element: options.presentationModeButton,
-      eventName: "presentationmode"
-    }, {
-      element: options.download,
-      eventName: "download"
     }, {
       element: options.addToBookmarks,
       eventName: "addtobookmarks"
@@ -22522,20 +22462,12 @@ function getViewerConfiguration() {
       zoomIn: document.getElementById("zoomIn"),
       zoomOut: document.getElementById("zoomOut"),
       viewFind: document.getElementById("viewFind"),
-      openFile: document.getElementById("openFile"),
-      print: document.getElementById("print"),
-      presentationModeButton: document.getElementById("presentationMode"),
-      download: document.getElementById("download"),
       addToBookmarks: document.getElementById("addToBookmarks")
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
       toggleButton: document.getElementById("secondaryToolbarToggle"),
       toolbarButtonContainer: document.getElementById("secondaryToolbarButtonContainer"),
-      presentationModeButton: document.getElementById("secondaryPresentationMode"),
-      openFileButton: document.getElementById("secondaryOpenFile"),
-      printButton: document.getElementById("secondaryPrint"),
-      downloadButton: document.getElementById("secondaryDownload"),
       addToBookmarksButton: document.getElementById("secondaryAddToBookmarks"),
       firstPageButton: document.getElementById("firstPage"),
       lastPageButton: document.getElementById("lastPage"),
