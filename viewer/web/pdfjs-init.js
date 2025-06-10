@@ -19,7 +19,36 @@ try {
 function onViewerLoaded() {
   PDFViewerApplication.initializedPromise.then(() => {
     const embedScript = document.createElement('script');
-    embedScript.src = 'https://hypothes.is/embed.js';
+    embedScript.src = 'https://h.npcourses.com/embed.js';
     document.body.appendChild(embedScript);
   });
+
+  const hypothesis_access_token = localStorage.getItem('hypothesis_access_token');
+
+  window.hypothesisConfig = function () {
+    return {
+      mainContainerSelector: document.getElementById('outerContainer'),
+      services: [{
+        apiUrl          : 'https://h.npcourses.com/api/',
+        authority       : 'bastreamingstg.wpengine.com',
+        grantToken      : hypothesis_access_token,
+        enableShareLinks: false,
+        onLoginRequest  : function(){
+          document.location.href = '/login?redirect_to=' + encodeURIComponent(window.location.href);
+        },
+        onLogoutRequest: function (){
+          document.location.href = '/account/logout';
+        },
+        onSignupRequest: function() {
+          document.location.href = '/register?redirect_to=' + encodeURIComponent(window.location.href);
+        },
+        onProfileRequest: function() {
+          document.location.href = '/account';
+        },
+        usernameUrl: function() {
+          return false;
+        }
+      }]
+    };
+  };
 }
