@@ -74,7 +74,7 @@ var defaultOptions = {
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE
   },
   defaultUrl: {
-    value: "compressed.tracemonkey-pldi-09.pdf",
+    value: pdfjs_object.file,
     kind: OptionKind.VIEWER
   },
   defaultZoomValue: {
@@ -2407,19 +2407,13 @@ var PDFViewerApplication = {
     (_this$pdfPresentation = this.pdfPresentationMode) === null || _this$pdfPresentation === void 0 ? void 0 : _this$pdfPresentation.request();
   },
   requestSendBookmarksAjax: function requestSendBookmarksAjax(data) {
-    data.page_id = localStorage.getItem('wordpress_ebook_id');
-    data.user_id = localStorage.getItem('wordpress_user_id');
-
     if (navigator.onLine) {
-      const xhttpr = new XMLHttpRequest();
-      const url = 'https://bastreamingstg.wpengine.com/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
-      xhttpr.open('POST', url, true);
-      xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-      xhttpr.send(new URLSearchParams(data).toString());
+      const client = new BookmarkHttpClient();
+      const xhttpr = client.post(data);
 
       xhttpr.onload = ()=> {
         if (xhttpr.status === 200) {
-          const bookmarks = JSON.parse(xhttpr.response);
+          const bookmarks = JSON.parse(xhttpr.response).data;
 
           // Save bookmarks offline
           offlineBookmarks.save(bookmarks);
@@ -22195,20 +22189,13 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
       value: function _dispatchEvent() {
         var data = {
           'action': 'get_bookmarks',
-          'page_id': localStorage.getItem('wordpress_ebook_id'),
-          'user_id': localStorage.getItem('wordpress_user_id'),
         };
-        const xhttpr = new XMLHttpRequest();
-        const url = 'https://bastreamingstg.wpengine.com/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
-        xhttpr.open('POST', url, true);
-        xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-        xhttpr.send(new URLSearchParams(data).toString());
+        const client = new BookmarkHttpClient();
+        const xhttpr = client.post(data);
 
         xhttpr.onload = ()=> {
           if (xhttpr.status === 200) {
-            const bookmarks = JSON.parse(xhttpr.response);
-            console.log('bookmarks')
-            console.log(bookmarks)
+            const bookmarks = JSON.parse(xhttpr.response).data;
 
             PDFViewerApplication.pdfBookmarksViewer.render({
               bookmarks: bookmarks
@@ -22255,8 +22242,12 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
             }
           }
 
+          input.addEventListener('focus', function(e) {
+            input.select()
+          });
+
           var actions = document.createElement("div");
-          actions.className = "bookmarkActions";
+          actions.className = "bookmarkInputActions";
 
           var save = document.createElement("a");
           save.className = "bookmarkSave";
@@ -22298,7 +22289,6 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
         this.reset();
 
         if (!_ref.bookmarks) {
-          this._dispatchEvent();
           return;
         }
 
@@ -22326,12 +22316,12 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
 
           var rename = document.createElement("a");
           rename.className = "bookmarkRename";
-          rename.textContent = "rename";
+          rename.innerHTML = "<i class=\"fa-solid fa-pen-to-square\"></i>";
           this._bindRename(rename, li, i);
 
           var remove = document.createElement("a");
           remove.className = "bookmarkRemove";
-          remove.textContent = "remove";
+          remove.innerHTML = "<i class=\"fa-solid fa-trash\"></i>";
           this._bindRemove(remove, i);
 
           actions.appendChild(rename);
@@ -22618,18 +22608,14 @@ window.addEventListener('online', function() {
   var data = {
     'action'   : 'save_all_bookmarks',
     'bookmarks': offlineBookmarks.get(),
-    'page_id'  : localStorage.getItem('wordpress_ebook_id'),
   }
 
-  const xhttpr = new XMLHttpRequest();
-  const url = 'https://bastreamingstg.wpengine.com/wp-content/plugins/barkley/scripts/PDFBookmarks.php';
-  xhttpr.open('POST', url, true);
-  xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-  xhttpr.send(new URLSearchParams(data).toString());
+  const client = new BookmarkHttpClient();
+  const xhttpr = client.post(data);
 
   xhttpr.onload = ()=> {
     if (xhttpr.status === 200) {
-      const bookmarks = JSON.parse(xhttpr.response);
+      const bookmarks = JSON.parse(xhttpr.response).data;
 
       PDFViewerApplication.pdfBookmarksViewer.render({
         bookmarks: bookmarks
@@ -22637,3 +22623,24 @@ window.addEventListener('online', function() {
     }
   };
 });
+
+class BookmarkHttpClient {
+    constructor(defaultHeaders = {}) {
+        this.baseURL = 'https://bastreamingstg.wpengine.com/wp-admin/admin-ajax.php';
+        this.defaultHeaders = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            ...defaultHeaders
+        };
+    }
+
+    post(data) {
+        data.page_id = localStorage.getItem('wordpress_ebook_id');
+        data.user_id = localStorage.getItem('wordpress_user_id');
+
+        const xhttpr = new XMLHttpRequest();
+        xhttpr.open('POST', this.baseURL, true);
+        xhttpr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        xhttpr.send(new URLSearchParams(data).toString());
+        return xhttpr;
+    }
+}

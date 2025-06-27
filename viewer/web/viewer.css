@@ -1129,7 +1129,7 @@ select {
   overflow: auto;
   position: absolute;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0,0,0,.9);
   box-shadow: inset calc(-1px * var(--dir-factor)) 0 0 rgba(0, 0, 0, 0.25);
 }
 
@@ -2794,48 +2794,65 @@ dialog :link {
 #printContainer {
   display: none;
 }
-
+.bookmarkItems ul {
+    margin: 0;
+    list-style: none;
+}
+.bookmarkItems .bookmarkShow {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    padding: 5px;
+    align-items: center;
+}
 .bookmarkItem a {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 14px;
+  cursor: pointer;
+  padding: 5px;
 }
-
-.bookmarkItem .bookmarkName {
-    margin: 4px 0 5px;
-    display: block;
+.bookmarkItem a.bookmarkName {
+    line-height: 15px;
+    user-select: none;
+    padding-inline-start: 4px;
+    margin-bottom: 1px;
 }
-
-.bookmarkItem.bookmarkEditing .bookmarkShow {
-	display: none;
+.bookmarkItem .bookmarkShow:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    background-clip: padding-box;
+    border-radius: 2px;
 }
-
-.bookmarkItem {
-	position: relative;
-	padding-bottom: 15px;
+.bookmarkItem .bookmarkActions a:hover {
+    color: gray;
+}
+.bookmarkItem .bookmarkActions {
+    display: none;
+}
+.bookmarkItem:hover .bookmarkActions {
+    display: inline-block;
+}
+.bookmarkItem .bookmarkEdit {
+    padding: 5px;
 }
 .bookmarkItem input {
-    width: 90%;
+    width: 100%;
     font-size: 13px;
     padding: 3px;
 }
-.bookmarkItem .bookmarkActions {
-	display: none;
-	position: absolute;
-	bottom: 0;
-	left: 0;
+.bookmarkItem .bookmarkInputActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    justify-items: stretch;
+    gap: 5px;
+    padding-top: 5px;
 }
-.bookmarkItem:hover .bookmarkActions {
-	display: block;
+.bookmarkItem .bookmarkInputActions a {
+    text-align: center;
+    padding: 5px;
+    border-radius: 2px;
+    background-color: rgba(255, 255, 255, 0.15);
 }
-.bookmarkItem .bookmarkActions a {
-	display: inline;
-	min-width: auto;
-	cursor: pointer;
-}
-.bookmarkItem .bookmarkActions a:first-child:after {
-	content: "|";
-	padding-left: 2px;
-	margin-right: 2px;
+.bookmarkItem .bookmarkInputActions a:hover {
+    background-color: rgba(255, 255, 255, 0.4);
 }
 
 @media print {

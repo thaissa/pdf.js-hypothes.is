@@ -19,7 +19,7 @@ try {
 function onViewerLoaded() {
   PDFViewerApplication.initializedPromise.then(() => {
     const embedScript = document.createElement('script');
-    embedScript.src = 'https://h.npcourses.com/embed.js';
+    embedScript.src = 'https://hy-server.npcourses.com/embed.js';
     document.body.appendChild(embedScript);
   });
 
@@ -29,7 +29,7 @@ function onViewerLoaded() {
     return {
       mainContainerSelector: document.getElementById('outerContainer'),
       services: [{
-        apiUrl          : 'https://h.npcourses.com/api/',
+        apiUrl          : 'https://hy-server.npcourses.com/api/',
         authority       : 'bastreamingstg.wpengine.com',
         grantToken      : hypothesis_access_token,
         enableShareLinks: false,
