@@ -2454,7 +2454,7 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
   -webkit-padding-start: 4px;
           padding-inline-start: 4px;
   border-radius: 2px;
-  color: var(--treeitem-color);
+  color: #ffffff;
   font-size: 13px;
   line-height: 15px;
   -webkit-user-select: none;
@@ -2522,10 +2522,10 @@ a:focus > .thumbnail > .thumbnailSelectionRing,
 .treeItemToggler:hover + a,
 .treeItemToggler:hover ~ .treeItems,
 .treeItem > a:hover {
-  background-color: var(--sidebaritem-bg-color);
+  background-color: rgba(255,255,255,0.15);
   background-clip: padding-box;
   border-radius: 2px;
-  color: var(--treeitem-hover-color);
+  color: rgba(255,255,255,0.9);
 }
 
 /* TODO: file FF bug to support ::-moz-selection:window-inactive
